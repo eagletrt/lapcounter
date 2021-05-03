@@ -6,6 +6,14 @@
 #define TO_DEG 180 / M_PI
 #define TO_RAD M_PI / 180
 
+void print_point(Point * p) {
+    printf("point(%f,%f)\n", p->x, p->y);
+}
+
+void print_vector(Vector * v) {
+    printf("vector(p1:(%f,%f),p1:(%f,%f),%f,%f)\n", v->p1.x, v->p1.y, v->p2.x, v->p2.y, v->dx, v->dy);
+}
+
 void set_vector(Vector * v_ptr, Point * p1, Point * p2) {
     v_ptr->p1 = *p1;
     v_ptr->p2 = *p2;
@@ -44,7 +52,7 @@ void get_perpendicular_vector(Vector * vin_ptr, Vector * vout_ptr) {
 }
 
 double get_vector_length(Vector * v) {
-    return sqrt(pow(v->dx,2) + pow(v->dy, 2));
+    return get_distance(&(v->p1), &(v->p2));
 }
 
 double get_vector_angle(Vector * v) {
@@ -63,4 +71,8 @@ double dot_product(Vector * v1, Vector * v2) {
 
 double determinant(Vector * v1, Vector * v2) {
     return v1->dx * v2->dy - v1->dy * v2->dx;
+}
+
+double get_distance(Point * p1, Point * p2) {
+    return sqrt(pow(p2->x - p1->x,2) + pow(p2->y - p1->y, 2));
 }

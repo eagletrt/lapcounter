@@ -13,6 +13,9 @@ typedef struct {
     double dy;
 } Vector;
 
+void print_point(Point * p);
+void print_vector(Vector * v);
+
 void set_vector(Vector * v_ptr, Point * p1, Point * p2);
 
 void set_vector_from_angle(Vector * v_ptr, Point * p1, float angle);
@@ -28,5 +31,7 @@ double get_vector_angle(Vector * v);
 double dot_product(Vector * v1, Vector * v2);
 
 double determinant(Vector * v1, Vector * v2);
+
+double get_distance(Point * p1, Point * p2);
 
 #endif
