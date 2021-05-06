@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "coordinates.h": "c",
+        "lapcounter.h": "c"
+    }
+}
