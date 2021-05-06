@@ -1,4 +1,5 @@
 import json
+import sys
 from contagiri import Contagiri
 from geometry import Vector, Point
 import pygame
@@ -20,12 +21,6 @@ GREEN = (0, 255, 0)
 display = pygame.display.set_mode((window_width, window_height))
 clock = pygame.time.Clock()
 
-
-
-
-
-
-
 c = None
 x_multiplier = None
 y_multiplier = None
@@ -34,6 +29,8 @@ try:
     with open("GPS_LOG_AND_PROCESS/1/result.json", "r") as f:
         data = json.load(f)["gps"]["rmc"]
     with open("GPS_LOG_AND_PROCESS/2/result.json", "r") as f:
+        data += json.load(f)["gps"]["rmc"]
+    with open("GPS_LOG_AND_PROCESS/3/result.json", "r") as f:
         data += json.load(f)["gps"]["rmc"]
     
     for rmc in data:
