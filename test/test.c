@@ -14,7 +14,7 @@ void main() {
     // these already are optimal values
     lc_counter_t * lp = lc_init(NULL); // initialization with 105% proximity increment, +-45° inclination thr.
 
-    FILE *file = fopen("example_tracks/track-8lap-tangled.txt", "r");
+    FILE *file = fopen("example_tracks/real.txt", "r");
     while (!feof(file)) {
         bytes_read = fscanf(file, "%lf %lf\n", &x, &y);
         point.x = x / 1000000 + 46.4331; // transforms pixel...
