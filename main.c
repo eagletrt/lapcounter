@@ -19,7 +19,8 @@ void main() {
     double x, y; // to read from file
     Point point; // to pass to evaluation
 
-    LapCounter * lp = create_lapcounter(1.10, 45); // initialization with 50 proximity thr., +-45° inclination thr.
+    // these already are optimal values
+    LapCounter * lp = create_lapcounter(1.05, 45); // initialization with 105% proximity increment, +-45° inclination thr.
 
     FILE *file = fopen("example_tracks/track-8lap-tangled.txt", "r");
     while (!feof(file)) {
