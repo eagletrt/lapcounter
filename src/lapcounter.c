@@ -15,7 +15,9 @@ static void _update_startline_points(lc_counter_t *lp, lc_point_t *p);
 // Calculates the start line and the start vector, used when the start points are all gathered
 static void _calc_startline(lc_counter_t *lp, lc_point_t *p);
 // Updates the proximity thr after that the current vector has been updated
-static int _update_proximity_thr(lc_counter_t *lp);
+static void _update_proximity_thr(lc_counter_t *lp);
+// Resets to False (0) the results from the last evaluation
+static void _reset_last_results(lc_counter_t *lp);
 
 // Checks if the last point is very near to the first point
 static int _check_proximity(lc_counter_t *lp);
@@ -59,11 +61,14 @@ int lc_eval_point(lc_counter_t *lp, lc_point_t *p)
     {
         _calc_startline(lp, p);
     }
-    // Otherwise check if it is a new leap
+    // Otherwise check if it is a new lap
     else
     {
         // Updates the proximity thr
         _update_proximity_thr(lp);
+
+        // Retest last result
+        _reset_last_results(lp);
 
         // If new lap, increment laps count and set result to true
         if (_check_proximity(lp) && _check_inclination(lp) && _check_overlap(lp))
@@ -129,7 +134,7 @@ static void _calc_startline(lc_counter_t *lp, lc_point_t *p)
     lp->start_point_index++;
 }
 
-static int _update_proximity_thr(lc_counter_t *lp)
+static void _update_proximity_thr(lc_counter_t *lp)
 {
     double proximity_temp = lc_vector_length(&lp->current_vector) * lp->proximity_incr;
     if (proximity_temp > lp->proximity_thr)
@@ -138,18 +143,29 @@ static int _update_proximity_thr(lc_counter_t *lp)
     }
 }
 
+static void _reset_last_results(lc_counter_t *lp)
+{
+    lp->last_proximity_result = 0;
+    lp->last_inclination_result = 0;
+    lp->last_overlap_result = 0;
+}
+
 static int _check_proximity(lc_counter_t *lp)
 {
     double d1 = lc_point_distance(&lp->last_point, &lp->start_points[0]);
     double d2 = lc_point_distance(&lp->current_point, &lp->start_points[0]);
-    return d1 < lp->proximity_thr && d2 < lp->proximity_thr;
+    int result = d1 < lp->proximity_thr && d2 < lp->proximity_thr;
+    lp->last_proximity_result = result;
+    return result;
 }
 
 static int _check_inclination(lc_counter_t *lp)
 {
     double current_vector_angle = lc_vector_angle(&lp->current_vector);
     double angle_difference = (double)((int)(current_vector_angle - lp->start_vector_angle + 180) % 360 - 180);
-    return fabs(angle_difference) <= lp->inclination_thr;
+    int result = fabs(angle_difference) <= lp->inclination_thr;
+    lp->last_inclination_result = result;
+    return result;
 }
 
 static int _check_overlap(lc_counter_t *lp)
@@ -160,5 +176,7 @@ static int _check_overlap(lc_counter_t *lp)
     lc_vector_set(&v2, &lp->start_line.p1, &lp->current_vector.p2);
     overlap_p1cond = lc_vector_det(&lp->start_line, &v1) > 0;
     overlap_p2cond = lc_vector_det(&lp->start_line, &v2) > 0;
-    return overlap_p1cond != overlap_p2cond;
+    int result = overlap_p1cond != overlap_p2cond;
+    lp->last_overlap_result = result;
+    return result;
 }

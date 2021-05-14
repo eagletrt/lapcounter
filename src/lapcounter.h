@@ -47,6 +47,12 @@ typedef struct _lc_counter_t
     lc_point_t current_point;
     /** The current vector (between last and current point) **/
     lc_vector_t current_vector;
+    /** Last result of proximity evaluation **/
+    int last_proximity_result;
+    /** Last result of inclination evaluation **/
+    int last_inclination_result;
+    /** Last result of overlap evaluation **/
+    int last_overlap_result;
 
     double proximity_thr;
     double proximity_incr;
