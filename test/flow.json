@@ -1,0 +1,226 @@
+[
+    {
+        "id": "f6f2187d.f17ca8",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "3cc11d24.ff01a2",
+        "type": "comment",
+        "z": "f6f2187d.f17ca8",
+        "name": "WARNING: please check you have started this container with a volume that is mounted to /data\\n otherwise any flow changes are lost when you redeploy or upgrade the container\\n (e.g. upgrade to a more recent node-red docker image).\\n  If you are using named volumes you can ignore this warning.\\n Double click or see info side panel to learn how to start Node-RED in Docker to save your work",
+        "info": "\nTo start docker with a bind mount volume (-v option), for example:\n\n```\ndocker run -it -p 1880:1880 -v /home/user/node_red_data:/data --name mynodered nodered/node-red\n```\n\nwhere `/home/user/node_red_data` is a directory on your host machine where you want to store your flows.\n\nIf you do not do this then you can experiment and redploy flows, but if you restart or upgrade the container the flows will be disconnected and lost. \n\nThey will still exist in a hidden data volume, which can be recovered using standard docker techniques, but that is much more complex than just starting with a named volume as described above.",
+        "x": 330,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "93423a69.fa3918",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "url": "/add_point",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 200,
+        "y": 200,
+        "wires": [
+            [
+                "3cf6e552.10639a",
+                "d4e430ae.2d70a",
+                "30e3006a.8621d"
+            ]
+        ]
+    },
+    {
+        "id": "3cf6e552.10639a",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 460,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "d4e430ae.2d70a",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "func": "// lat\n// lon\n// color\n// tooltip\nlet color = msg.payload.color ? \"#\" + msg.payload.color : \"#FFF\";\nlet payload = {\n    lat: msg.payload.lat,\n    lon: msg.payload.lon,\n    tooltip: msg.payload.tt,\n    iconColor: color,\n    icon: \"arrow\",\n    heading: -(msg.payload.angle - 90),\n    name: Math.random().toString(36).substring(7)\n};\nreturn {payload};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 240,
+        "wires": [
+            [
+                "18d94de3.65c142"
+            ]
+        ]
+    },
+    {
+        "id": "30e3006a.8621d",
+        "type": "debug",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 470,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "18d94de3.65c142",
+        "type": "worldmap",
+        "z": "f6f2187d.f17ca8",
+        "name": "EagleTRT Map",
+        "lat": "46.434",
+        "lon": "11.313",
+        "zoom": "18",
+        "layer": "Esri Satellite",
+        "cluster": "",
+        "maxage": "",
+        "usermenu": "show",
+        "layers": "show",
+        "panit": "false",
+        "panlock": "false",
+        "zoomlock": "false",
+        "hiderightclick": "false",
+        "coords": "deg",
+        "showgrid": "false",
+        "allowFileDrop": "false",
+        "path": "/worldmap",
+        "x": 700,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "796c2f88.2c767",
+        "type": "inject",
+        "z": "f6f2187d.f17ca8",
+        "name": "North",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"lat\":45, \"lon\":11, \"icon\":\"arrow\", \"iconColor\":\"red\", \"heading\":0,\"name\":\"N\" }",
+        "payloadType": "json",
+        "x": 410,
+        "y": 380,
+        "wires": [
+            [
+                "18d94de3.65c142"
+            ]
+        ]
+    },
+    {
+        "id": "3ea44bf4.80c514",
+        "type": "inject",
+        "z": "f6f2187d.f17ca8",
+        "name": "East",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"lat\":45, \"lon\":11, \"icon\":\"arrow\", \"heading\":90,\"name\":\"E\" }",
+        "payloadType": "json",
+        "x": 410,
+        "y": 420,
+        "wires": [
+            [
+                "18d94de3.65c142"
+            ]
+        ]
+    },
+    {
+        "id": "8dddf0ba.35c8b",
+        "type": "inject",
+        "z": "f6f2187d.f17ca8",
+        "name": "South",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"lat\":45, \"lon\":11, \"icon\":\"arrow\", \"heading\":180,\"name\":\"S\" }",
+        "payloadType": "json",
+        "x": 410,
+        "y": 460,
+        "wires": [
+            [
+                "18d94de3.65c142"
+            ]
+        ]
+    },
+    {
+        "id": "9e798e5a.625f8",
+        "type": "inject",
+        "z": "f6f2187d.f17ca8",
+        "name": "West",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"lat\":45, \"lon\":11, \"icon\":\"arrow\", \"heading\":-90,\"name\":\"W\" }",
+        "payloadType": "json",
+        "x": 410,
+        "y": 500,
+        "wires": [
+            [
+                "18d94de3.65c142"
+            ]
+        ]
+    }
+]

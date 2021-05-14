@@ -1,0 +1,1 @@
+curl "http://192.168.0.122:1880/add_point?lat=$1&lon=$2&angle=$3&tt=$4&color=$5" -s > /dev/null
