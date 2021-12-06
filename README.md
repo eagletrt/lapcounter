@@ -2,6 +2,9 @@
 
 ## Usage
 
+### New version
+Just compile with test/compile.sh, then make test/test.out run as a service. It will wait for coordinates and it will send the lapCount on can bus when new lap is detected.
+
 ### Inclusion
 You must include the header file alongside all of your other libraries.
 ```
