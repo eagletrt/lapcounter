@@ -38,28 +38,29 @@ void main(int argc, char **argv) {
     const char *ifname1 = "vcan0";
     const char *ifname2 = "can0";
 
+    
     if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) == -1) {
         perror("Error while opening socket for reading virtual can");
         return;
     }
-
+    /*
     if ((j = socket(PF_CAN, SOCK_RAW, CAN_RAW)) == -1) {
         perror("Error while opening socket for writing can");
         return;
-    }
+    }*/
 
     strcpy(ifr1.ifr_name, ifname1);
-    strcpy(ifr2.ifr_name, ifname2);
+    //strcpy(ifr2.ifr_name, ifname2);
     ioctl(s, SIOCGIFINDEX, &ifr1);
-    ioctl(j, SIOCGIFINDEX, &ifr2);
+    //ioctl(j, SIOCGIFINDEX, &ifr2);
 
     addr1.can_family  = AF_CAN;
     addr1.can_ifindex = ifr1.ifr_ifindex;
-    addr2.can_family  = AF_CAN;
-    addr2.can_ifindex = ifr2.ifr_ifindex;
+    //addr2.can_family  = AF_CAN;
+    //addr2.can_ifindex = ifr2.ifr_ifindex;
 
     printf("%s at index %d\n", ifname1, ifr1.ifr_ifindex);
-    printf("%s at index %d\n", ifname2, ifr2.ifr_ifindex);
+    //printf("%s at index %d\n", ifname2, ifr2.ifr_ifindex);
 
     if (bind(s, (struct sockaddr *)&addr1, sizeof(addr1)) == -1) {
             perror("Error in socket bind");
@@ -82,9 +83,17 @@ void main(int argc, char **argv) {
 
     lc_point_t point;   // to pass to evaluation
     lc_counter_t * lp = lc_init(NULL);  // initialization with default settings
+    double precX = -1;
+    double precY = -1;
 
     while (scanf("%lf %lf", &point.x, &point.y)) {
-        printf("Reading: %lf, %lf", point.x, point.y);
+        if (point.x == precX && point.y == precY)
+            continue;
+        precX = point.x;
+        precY = point.y;
+        printf("Reading: %lf, %lf\n", point.x, point.y);
+        if (point.x == 0 && point.y == 0)
+            break;
         if (lc_eval_point(lp, &point)) {
             struct can_frame frameWrite;
             frameWrite.can_id  = 0x6A0;  //change this
@@ -95,8 +104,8 @@ void main(int argc, char **argv) {
             printf("BIP!\n");
         }
     }
-    //printf("\nLAP COUNT: %d\n", lp->laps_count);
+    printf("\nLAP COUNT: %d\n", lp->laps_count);
 
-    //lc_reset(lp); // reset object (removes everything but thresholds)
-    //lc_destroy(lp);
+    lc_reset(lp); // reset object (removes everything but thresholds)
+    lc_destroy(lp);
 }

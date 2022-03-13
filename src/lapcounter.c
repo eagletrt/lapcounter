@@ -43,6 +43,8 @@ lc_counter_t *lc_init(lc_counter_config_t *config)
     return lp;
 }
 
+int counterPoints;
+
 int lc_eval_point(lc_counter_t *lp, lc_point_t *p)
 {
     // Bool result if new lap
@@ -70,8 +72,13 @@ int lc_eval_point(lc_counter_t *lp, lc_point_t *p)
         // Retest last result
         _reset_last_results(lp);
 
+        int proxim = _check_proximity(lp);
+        int inclin = _check_inclination(lp);
+        int overl = _check_overlap(lp);
+        counterPoints++;
+        fprintf(stderr, "%d: %d, %d, %d\n", counterPoints, proxim, inclin, overl);
         // If new lap, increment laps count and set result to true
-        if (_check_proximity(lp) && _check_inclination(lp) && _check_overlap(lp))
+        if (proxim && inclin && overl)
         {
             lp->laps_count++;
             new_lap = 1;
@@ -162,8 +169,10 @@ static int _check_proximity(lc_counter_t *lp)
 static int _check_inclination(lc_counter_t *lp)
 {
     double current_vector_angle = lc_vector_angle(&lp->current_vector);
-    double angle_difference = (double)((int)(current_vector_angle - lp->start_vector_angle + 180) % 360 - 180);
+    //double angle_difference = (double)((int)(current_vector_angle - lp->start_vector_angle + 180) % 360 - 180);
+    double angle_difference = (double)((int)current_vector_angle - lp->start_vector_angle);
     int result = fabs(angle_difference) <= lp->inclination_thr;
+    fprintf(stderr, "%lf %lf\n", current_vector_angle, lp->start_vector_angle);
     lp->last_inclination_result = result;
     return result;
 }
