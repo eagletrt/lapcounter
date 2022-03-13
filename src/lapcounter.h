@@ -79,7 +79,7 @@ lc_counter_t *lc_init(lc_counter_config_t* config);
  * @param p The new point reference.
  * @return int 1 if there is a new leap
  */
-int lc_eval_point(lc_counter_t *lp, lc_point_t *p);
+int lc_eval_point(lc_counter_t *lp, lc_point_t *p, lc_counter_t *lp_inclination);
 
 /**
  * @brief Resets the leap counter, as it were after the init function

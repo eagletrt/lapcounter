@@ -83,6 +83,7 @@ void main(int argc, char **argv) {
 
     lc_point_t point;   // to pass to evaluation
     lc_counter_t * lp = lc_init(NULL);  // initialization with default settings
+    lc_counter_t * lp_inclination = lc_init(NULL);
     double precX = -1;
     double precY = -1;
 
@@ -94,7 +95,7 @@ void main(int argc, char **argv) {
         printf("Reading: %lf, %lf\n", point.x, point.y);
         if (point.x == 0 && point.y == 0)
             break;
-        if (lc_eval_point(lp, &point)) {
+        if (lc_eval_point(lp, &point, lp_inclination)) {
             struct can_frame frameWrite;
             frameWrite.can_id  = 0x6A0;  //change this
             frameWrite.can_dlc = 1; // 1 for lap count
@@ -108,4 +109,6 @@ void main(int argc, char **argv) {
 
     lc_reset(lp); // reset object (removes everything but thresholds)
     lc_destroy(lp);
+    lc_reset(lp_inclination);
+    lc_destroy(lp_inclination);
 }

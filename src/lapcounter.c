@@ -2,9 +2,10 @@
 
 /** HELPER VARS **/
 
-static const double _LC_DEFAULT_PROXIMITY_INCR = 1.05;
+static const double _LC_DEFAULT_PROXIMITY_INCR = 1.85;
 static const double _LC_DEFAULT_INCLINATION_THR = 45;
-static const size_t _LC_DEFAULT_START_POINTS_COUNT = 5;
+static const size_t _LC_DEFAULT_START_POINTS_COUNT = 50;
+#define _LC_NUMBER_OF_POINTS_FOR_INCLINATION_BATCH 20
 
 /** HELPER FUNCTION SIGNATURES **/
 
@@ -44,14 +45,21 @@ lc_counter_t *lc_init(lc_counter_config_t *config)
 }
 
 int counterPoints;
+double ultimiPunti[_LC_NUMBER_OF_POINTS_FOR_INCLINATION_BATCH][2];
 
-int lc_eval_point(lc_counter_t *lp, lc_point_t *p)
+int lc_eval_point(lc_counter_t *lp, lc_point_t *p, lc_counter_t *lp_inclination)
 {
     // Bool result if new lap
     int new_lap = 0;
 
     // Sets the last two points (last and current) and updates the related vector (current_vector)
     _update_current_vector(lp, p);
+    ultimiPunti[counterPoints%_LC_NUMBER_OF_POINTS_FOR_INCLINATION_BATCH][0] = p->x;
+    ultimiPunti[counterPoints%_LC_NUMBER_OF_POINTS_FOR_INCLINATION_BATCH][1] = p->y;
+    if (counterPoints >= _LC_NUMBER_OF_POINTS_FOR_INCLINATION_BATCH) {
+        lc_point_t *last_batchPoint = lc_point_init(ultimiPunti[(counterPoints+1)%_LC_NUMBER_OF_POINTS_FOR_INCLINATION_BATCH][0], ultimiPunti[(counterPoints+1)%_LC_NUMBER_OF_POINTS_FOR_INCLINATION_BATCH][1]);
+        _update_current_vector(lp_inclination, last_batchPoint);
+    }
 
     // If the point is one of the firsts, use it to create the start line
     if (lp->start_point_index < lp->start_points_count)
@@ -62,20 +70,24 @@ int lc_eval_point(lc_counter_t *lp, lc_point_t *p)
     else if (lp->start_point_index == lp->start_points_count)
     {
         _calc_startline(lp, p);
+        lp_inclination->start_vector_angle = lp->start_vector_angle;
+        lp_inclination->inclination_thr = lp->inclination_thr;
     }
     // Otherwise check if it is a new lap
     else
     {
-        // Updates the proximity thr
-        _update_proximity_thr(lp);
+        // Updates the proximity thr (if lap hasn't been found yet)
+        if (lp->laps_count == 0)
+            _update_proximity_thr(lp);
 
-        // Retest last result
+        // Reset last result
         _reset_last_results(lp);
+        _reset_last_results(lp_inclination);
 
         int proxim = _check_proximity(lp);
-        int inclin = _check_inclination(lp);
+        int inclin = _check_inclination(lp_inclination);
+        //int inclin = _check_inclination(lp);
         int overl = _check_overlap(lp);
-        counterPoints++;
         fprintf(stderr, "%d: %d, %d, %d\n", counterPoints, proxim, inclin, overl);
         // If new lap, increment laps count and set result to true
         if (proxim && inclin && overl)
@@ -84,6 +96,7 @@ int lc_eval_point(lc_counter_t *lp, lc_point_t *p)
             new_lap = 1;
         }
     }
+    counterPoints++;
 
     return new_lap;
 }
@@ -121,6 +134,7 @@ static void _calc_startline(lc_counter_t *lp, lc_point_t *p)
     double avg_start_angle = 0;
     lc_vector_t temp_vect;
 
+    /*
     // For every couple of start points
     for (int i = 0; i < lp->start_points_count - 1; ++i)
     {
@@ -130,6 +144,10 @@ static void _calc_startline(lc_counter_t *lp, lc_point_t *p)
     }
     // Finish calculating the avg_start_angle
     avg_start_angle /= lp->start_points_count - 1;
+    */
+
+    lc_vector_set(&temp_vect, &lp->start_points[0], &lp->start_points[lp->start_points_count-1]);
+    avg_start_angle = lc_vector_angle(&temp_vect);
 
     // Sets the start vector as a vector starting from the first point and having the average angle between the first points
     lc_vector_set_from_angle(&lp->start_vector, &lp->start_points[0], avg_start_angle);
@@ -162,6 +180,7 @@ static int _check_proximity(lc_counter_t *lp)
     double d1 = lc_point_distance(&lp->last_point, &lp->start_points[0]);
     double d2 = lc_point_distance(&lp->current_point, &lp->start_points[0]);
     int result = d1 < lp->proximity_thr && d2 < lp->proximity_thr;
+    fprintf(stderr, "%lf, %lf | ", d1, lp->proximity_thr);
     lp->last_proximity_result = result;
     return result;
 }
@@ -169,10 +188,10 @@ static int _check_proximity(lc_counter_t *lp)
 static int _check_inclination(lc_counter_t *lp)
 {
     double current_vector_angle = lc_vector_angle(&lp->current_vector);
-    //double angle_difference = (double)((int)(current_vector_angle - lp->start_vector_angle + 180) % 360 - 180);
-    double angle_difference = (double)((int)current_vector_angle - lp->start_vector_angle);
+    double angle_difference = (double)((int)(current_vector_angle - lp->start_vector_angle + 180) % 360 - 180);
+    //double angle_difference = (double)((int)current_vector_angle - lp->start_vector_angle);
     int result = fabs(angle_difference) <= lp->inclination_thr;
-    fprintf(stderr, "%lf %lf\n", current_vector_angle, lp->start_vector_angle);
+    //fprintf(stderr, "%lf %lf | ", current_vector_angle, lp->start_vector_angle);
     lp->last_inclination_result = result;
     return result;
 }
