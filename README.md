@@ -1,4 +1,6 @@
-# Eagle-Lapcounter
+# Lap Counter
+
+> ⚠️ Warning. Documentation refers to a previous version. WIP.
 
 ## Usage
 
