@@ -148,7 +148,6 @@ int main(int argc, char *argv[]) {
   SetTargetFPS(60);
 
   int point_index = 0, lap_index = 0, lap_iterator = 0;
-  bool invalidate_point = true;
   bool autoplay = false;
 
   float lat = 0, lng = 0;
@@ -179,6 +178,10 @@ int main(int argc, char *argv[]) {
       lc_reset(lc);
     }
 
+    if (IsKeyPressed(KEY_S)) {
+      lc_reset(lc);
+    }
+
     if (IsKeyPressed(KEY_UP)) {
       speed = speed == 1 ? 2 : fmin(speed + 2, 10);
     } else if (IsKeyPressed(KEY_DOWN)) {
@@ -187,21 +190,12 @@ int main(int argc, char *argv[]) {
 
     if (autoplay || IsKeyPressed(KEY_RIGHT) || (IsKeyDown(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT))) {
       point_index = mod(point_index + speed, total_points);
-      invalidate_point = true;
     } else if (IsKeyPressed(KEY_LEFT) || (IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT))) {
       point_index = mod(point_index - speed, total_points);
-      invalidate_point = true;
     }
 
-    if (invalidate_point) {
-      invalidate_point = false;
-      lc_reset(lc);
-      lap_index = 0;
-      for (j = 0; j < point_index; j++) {
-        if (lc_eval_point(lc, &geo_points[j])) {
-          laps[lap_index++] = j;
-        }
-      }
+    if (lc_eval_point(lc, &geo_points[j])) {
+      laps[lap_index++] = j;
     }
 
     lng = (GetMouseX() / scale) + xmin;
