@@ -76,7 +76,7 @@ double lc_vector_angle(const lc_vector_t *v);
  * @param v2 The second vector.
  * @returns The dot product of the two vectors.
  */
-double lc_vector_prod(const lc_vector_t *v1, const lc_vector_t *v2);
+double lc_vector_dot(const lc_vector_t *v1, const lc_vector_t *v2);
 
 /**
  * @brief Return the determinant of the two vectors

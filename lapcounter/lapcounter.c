@@ -35,14 +35,13 @@ lc_counter_t *lc_init(double proximity_increment, double inclination_threshold, 
   counter->distance_threshold = distance_threshold;
 
   counter->start_points_count = start_points_count;
-  counter->start_points = (lc_point_t *)malloc(sizeof(lc_point_t) * counter->start_points_count);
-  memset(counter->start_points, 0, sizeof(lc_point_t) * counter->start_points_count);
+  memset(counter->start_points, 0, sizeof(lc_point_t) * 2);
 
   return counter;
 }
 
 int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
-  int under_threshold = 0;
+  int under_threshold = 0; // if the points are closer than threshold
   if (fabs(point->x - counter->current_point.x) < counter->distance_threshold &&
       fabs(point->y - counter->current_point.y) < counter->distance_threshold) {
     under_threshold = 1;
@@ -51,12 +50,15 @@ int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
   // Sets the last two points (last and current) and updates the related vector (current_vector)
   _update_current_vector(counter, point);
 
-  if (under_threshold == 0 && counter->start_point_index < counter->start_points_count) {
-    // If the point is one of the firsts, use it to create the start line
-    _update_startline_points(counter, point);
-  } else if (under_threshold == 0 && counter->start_point_index == counter->start_points_count) {
-    // If the points for the start line are just finished, calculate the start line and the start vector
-    _calc_startline(counter);
+  if(under_threshold == 0 && counter->start_point_index <= counter->start_points_count){
+    if (counter->start_point_index == 0) {
+      counter->start_points[0] = *point;
+    } else if (counter->start_point_index == counter->start_points_count){
+      counter->start_points[1] = *point;
+      // If the points for the start line are just finished, calculate the start line and the start vector
+      _calc_startline(counter);
+    }
+    counter->start_point_index ++;
   } else {
     // Otherwise check if it is a new lap
     // Updates the proximity thr (if lap hasn't been found yet)
@@ -94,11 +96,10 @@ void lc_reset(lc_counter_t *counter) {
   counter->current_vector.x = 0;
   counter->current_vector.y = 0;
 
-  memset(counter->start_points, 0, sizeof(lc_point_t) * counter->start_points_count);
+  memset(counter->start_points, 0, sizeof(lc_point_t) * 2);
 }
 
 void lc_destroy(lc_counter_t *counter) {
-  free(counter->start_points);
   free(counter);
 }
 
@@ -110,21 +111,17 @@ static void _update_current_vector(lc_counter_t *counter, lc_point_t *point) {
   counter->current_vector.y = counter->last_point.y - counter->current_point.y;
 }
 
-static void _update_startline_points(lc_counter_t *counter, lc_point_t *point) {
-  counter->start_points[counter->start_point_index++] = *point;
-}
-
 static void _calc_startline(lc_counter_t *counter) {
   lc_vector_t vector;
-  double average_angle = 0;
-  
-  vector.x = counter->start_points[0].x - counter->start_points[counter->start_points_count - 1].x;
-  vector.y = counter->start_points[0].y - counter->start_points[counter->start_points_count - 1].y;
-  average_angle = lc_vector_angle(&vector);
+  double angle = 0;
+
+  vector.x = counter->start_points[0].x - counter->start_points[1].x;
+  vector.y = counter->start_points[0].y - counter->start_points[1].y;
+  angle = lc_vector_angle(&vector);
 
   // Sets the start vector as a vector starting from the first point and having the average angle between the first
   // points
-  lc_vector_set_from_angle(&counter->start_inclination_vector, average_angle);
+  lc_vector_set_from_angle(&counter->start_inclination_vector, angle);
 
   lc_vector_set_from_perpendicular(&counter->start_line_vector, &counter->start_inclination_vector);
 
@@ -146,10 +143,24 @@ static void _reset_last_results(lc_counter_t *counter) {
 }
 
 static int _check_proximity(lc_counter_t *counter) {
+  lc_vector_t travel = {counter->current_point.x - counter->last_point.x,
+                        counter->current_point.y - counter->last_point.y};
+  
+  if(travel.x == 0 && travel.y == 0)
+    return 0;
+
+  // dist = abs((x2-x1)*(y1-ys) - (x1-xs)*(y2-y1)) / sqrt((x2-x1)^2 + (y2-y1)^2)
+  double num = fabs(travel.x*(counter->last_point.y - counter->start_points[0].y)
+                - travel.y * (counter->last_point.x - counter->start_points[0].x));
+  double den = sqrt(travel.x*travel.x + travel.y*travel.y);
+  double distance = num / den;
+
+  counter->last_proximity_result = distance < counter->proximity_threshold;
+
   double d1 = lc_point_distance(&counter->last_point, &counter->start_points[0]);
   double d2 = lc_point_distance(&counter->current_point, &counter->start_points[0]);
-
   counter->last_proximity_result = d1 < counter->proximity_threshold && d2 < counter->proximity_threshold;
+
   return counter->last_proximity_result;
 }
 

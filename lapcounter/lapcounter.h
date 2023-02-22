@@ -20,7 +20,7 @@ extern "C" {
  */
 typedef struct _lc_counter_t {
   /** The first points, used to determine the start line and vector **/
-  lc_point_t *start_points;
+  lc_point_t start_points[2];
   /** The number of first points that will be used to calculate the first line **/
   size_t start_points_count;
   /** The index of the current point, used to understand if the start line is to be evaluated and incremented only in

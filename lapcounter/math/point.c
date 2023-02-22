@@ -24,6 +24,6 @@ void lc_vector_set_from_perpendicular(lc_vector_t *v, const lc_vector_t *vp) {
   lc_vector_set(v, &(lc_point_t){vp->y, -vp->x});
 }
 
-double lc_vector_prod(const lc_vector_t *v1, const lc_vector_t *v2) { return v2->x * v1->x + v2->y * v1->y; }
+double lc_vector_dot(const lc_vector_t *v1, const lc_vector_t *v2) { return v2->x * v1->x + v2->y * v1->y; }
 
 double lc_vector_det(const lc_vector_t *v1, const lc_vector_t *v2) { return v1->x * v2->y - v1->y * v2->x; }
