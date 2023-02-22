@@ -42,18 +42,19 @@ lc_counter_t *lc_init(double proximity_increment, double inclination_threshold, 
 }
 
 int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
+  int under_threshold = 0;
   if (fabs(point->x - counter->current_point.x) < counter->distance_threshold &&
       fabs(point->y - counter->current_point.y) < counter->distance_threshold) {
-    return 0;
+    under_threshold = 1;
   }
 
   // Sets the last two points (last and current) and updates the related vector (current_vector)
   _update_current_vector(counter, point);
 
-  if (counter->start_point_index < counter->start_points_count) {
+  if (under_threshold == 0 && counter->start_point_index < counter->start_points_count) {
     // If the point is one of the firsts, use it to create the start line
     _update_startline_points(counter, point);
-  } else if (counter->start_point_index == counter->start_points_count) {
+  } else if (under_threshold == 0 && counter->start_point_index == counter->start_points_count) {
     // If the points for the start line are just finished, calculate the start line and the start vector
     _calc_startline(counter);
   } else {
@@ -116,16 +117,10 @@ static void _update_startline_points(lc_counter_t *counter, lc_point_t *point) {
 static void _calc_startline(lc_counter_t *counter) {
   lc_vector_t vector;
   double average_angle = 0;
-
-  // For every couple of start points
-  for (int i = 1; i < counter->start_points_count; ++i) {
-    // Create a vector between the two points and add its angle to the average_angle variable
-    vector.x = counter->start_points[i - 1].x - counter->start_points[i].x;
-    vector.y = counter->start_points[i - 1].y - counter->start_points[i].y;
-    average_angle += lc_vector_angle(&vector);
-  }
-  // Finish calculating the average_angle
-  average_angle /= counter->start_points_count;
+  
+  vector.x = counter->start_points[0].x - counter->start_points[counter->start_points_count - 1].x;
+  vector.y = counter->start_points[0].y - counter->start_points[counter->start_points_count - 1].y;
+  average_angle = lc_vector_angle(&vector);
 
   // Sets the start vector as a vector starting from the first point and having the average angle between the first
   // points
