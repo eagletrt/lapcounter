@@ -10,7 +10,7 @@ extern "C" {
 
 #include "math/point.h"
 
-#define LC_DEFAULT_PROXIMITY_INCREMENT 1.85
+#define LC_DEFAULT_PROXIMITY_THRESHOLD 0.0001
 #define LC_DEFAULT_INCLINATION_THRESHOLD 0.8
 #define LC_DEFAULT_DISTANCE_THRESHOLD 0.000001
 #define LC_DEFAULT_START_POINTS_COUNT 10
@@ -46,8 +46,16 @@ typedef struct _lc_counter_t {
   /** Last result of overlap evaluation **/
   int last_overlap_result;
 
+  /** from 0 to 1 and defines how close is the start_line to the points of the new lap */
+  /** sometimes the line is closer to current_point than to last_point and vice versa. */
+  /** To get the exact point (and so the lap time) at which the line was crossed */
+  /** the correction factor can be used: */
+  /** x = x_prev + delta_x * correction_factor */
+  /** y = y_prev + delta_y * correction_factor */
+  /** the same can be done with the timestamp */
+  double correction_factor;
+
   double proximity_threshold;
-  double proximity_increment;
   double inclination_threshold;
   double distance_threshold;
 
@@ -61,7 +69,7 @@ typedef struct _lc_counter_t {
  * @param config The configurations for the leap counter.
  * @return The created leap counter
  */
-lc_counter_t *lc_init(double proximity_increment, double inclination_threshold, double distance_threshold,
+lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, double distance_threshold,
                       size_t start_points_count);
 
 /**

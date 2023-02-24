@@ -6,6 +6,14 @@ double lc_point_distance(const lc_point_t *p1, const lc_point_t *p2) {
   return sqrt(pow(p2->x - p1->x, 2) + pow(p2->y - p1->y, 2));
 }
 
+double lc_point_line_distance(const lc_point_t *p, const lc_point_t *l1, const lc_point_t *l2){
+  // dist = abs((x2-x1)*(y1-ys) - (x1-xs)*(y2-y1)) / sqrt((x2-x1)^2 + (y2-y1)^2)
+  double num = fabs((l2->x - l1->x)*(l1->y - p->y ) - (l2->y - l1->y) * (l1->x - p->x ));
+  double den = sqrt((l2->x - l1->x)*(l2->x - l1->x) + (l2->y - l1->y) * (l2->y - l1->y));
+  double distance = num / den;
+}
+
+
 void lc_vector_set(lc_vector_t *v, const lc_point_t *p) {
   v->x = p->x;
   v->y = p->y;

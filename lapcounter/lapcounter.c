@@ -10,8 +10,6 @@ static void _update_current_vector(lc_counter_t *counter, lc_point_t *point);
 static void _update_startline_points(lc_counter_t *counter, lc_point_t *point);
 // Calculates the start line and the start vector, used when the start points are all gathered
 static void _calc_startline(lc_counter_t *counter);
-// Updates the proximity thr after that the current vector has been updated
-static void _update_proximity_threshold(lc_counter_t *counter);
 // Resets to False (0) the results from the last evaluation
 static void _reset_last_results(lc_counter_t *counter);
 
@@ -22,15 +20,17 @@ static int _check_inclination(lc_counter_t *counter);
 // Checks if the start line has been passed
 static int _check_overlap(lc_counter_t *counter);
 
-lc_counter_t *lc_init(double proximity_increment, double inclination_threshold, double distance_threshold,
+// Calculates the correction factor for the new lap
+static void _calc_correction_factor(lc_counter_t* counter);
+
+lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, double distance_threshold,
                       size_t start_points_count) {
   lc_counter_t *counter = (lc_counter_t *)malloc(sizeof(lc_counter_t));
 
   counter->start_point_index = 0;
   counter->laps_count = 0;
-  counter->proximity_threshold = 0;
 
-  counter->proximity_increment = proximity_increment;
+  counter->proximity_threshold = proximity_threshold;
   counter->inclination_threshold = inclination_threshold;
   counter->distance_threshold = distance_threshold;
 
@@ -60,23 +60,20 @@ int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
     }
     counter->start_point_index ++;
   } else {
-    // Otherwise check if it is a new lap
-    // Updates the proximity thr (if lap hasn't been found yet)
-    if (counter->laps_count == 0)
-      _update_proximity_threshold(counter);
-
     // Reset last result
     _reset_last_results(counter);
 
-    int proximity = _check_proximity(counter);
-    int inclination = _check_inclination(counter);
-    int overlap = _check_overlap(counter);
+    if(_check_proximity(counter) == 0)
+      return 0;
+    if(_check_inclination(counter) == 0)
+      return 0;
+    if(_check_overlap(counter) == 0)
+      return 0;
 
     // if new lap, increment laps count and set result to true
-    if (_check_proximity(counter) && _check_inclination(counter) && _check_overlap(counter)) {
-      counter->laps_count++;
-      return 1;
-    }
+    counter->laps_count++;
+    _calc_correction_factor(counter);
+    return 1;
   }
 
   return 0;
@@ -87,7 +84,7 @@ void lc_reset(lc_counter_t *counter) {
 
   counter->start_point_index = 0;
   counter->laps_count = 0;
-  counter->proximity_threshold = 0;
+  // counter->proximity_threshold = 0;
 
   counter->start_line_vector.x = 0;
   counter->start_line_vector.y = 0;
@@ -129,12 +126,6 @@ static void _calc_startline(lc_counter_t *counter) {
   counter->start_point_index++;
 }
 
-static void _update_proximity_threshold(lc_counter_t *counter) {
-  double proximity_temp = lc_vector_length(&counter->current_vector) * counter->proximity_increment;
-  if (proximity_temp > counter->proximity_threshold) {
-    counter->proximity_threshold = proximity_temp;
-  }
-}
 
 static void _reset_last_results(lc_counter_t *counter) {
   counter->last_proximity_result = 0;
@@ -149,17 +140,9 @@ static int _check_proximity(lc_counter_t *counter) {
   if(travel.x == 0 && travel.y == 0)
     return 0;
 
-  // dist = abs((x2-x1)*(y1-ys) - (x1-xs)*(y2-y1)) / sqrt((x2-x1)^2 + (y2-y1)^2)
-  double num = fabs(travel.x*(counter->last_point.y - counter->start_points[0].y)
-                - travel.y * (counter->last_point.x - counter->start_points[0].x));
-  double den = sqrt(travel.x*travel.x + travel.y*travel.y);
-  double distance = num / den;
+  double distance = lc_point_line_distance(&counter->start_points[0], &counter->last_point, &counter->current_point);
 
   counter->last_proximity_result = distance < counter->proximity_threshold;
-
-  double d1 = lc_point_distance(&counter->last_point, &counter->start_points[0]);
-  double d2 = lc_point_distance(&counter->current_point, &counter->start_points[0]);
-  counter->last_proximity_result = d1 < counter->proximity_threshold && d2 < counter->proximity_threshold;
 
   return counter->last_proximity_result;
 }
@@ -190,4 +173,14 @@ static int _check_overlap(lc_counter_t *counter) {
 
   counter->last_overlap_result = overlap_p1cond != overlap_p2cond;
   return counter->last_overlap_result;
+}
+
+static void _calc_correction_factor(lc_counter_t* counter){
+  double min_distance = lc_point_line_distance(&counter->start_points[0], &counter->last_point, &counter->current_point);
+  double last_distance = lc_point_distance(&counter->start_points[0], &counter->last_point);
+  double travel_distance = lc_point_distance(&counter->last_point, &counter->current_point);
+
+  double intersection_distance = sqrt(pow(last_distance, 2) - pow(min_distance, 2));
+
+  counter->correction_factor = intersection_distance / travel_distance;
 }

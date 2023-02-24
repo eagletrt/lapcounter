@@ -24,9 +24,18 @@ typedef lc_point_t lc_vector_t;
  *
  * @param p1 The ref to the first point
  * @param p2 The ref to the second point
- * @returns The string that represents the point
  */
 double lc_point_distance(const lc_point_t *p1, const lc_point_t *p2);
+
+
+/**
+ * @brief Calculate distance between a point and a line
+ * 
+ * @param p  The point
+ * @param l1 The first point of the line
+ * @param l2 The second point of the line
+ */
+double lc_point_line_distance(const lc_point_t *p, const lc_point_t *l1, const lc_point_t *l2);
 
 
 /**
