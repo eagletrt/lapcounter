@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
 
   int x_start = 0, x_end = 0, y_start = 0, y_end = 0;
 
-  lc_counter_t *lc = lc_init(LC_DEFAULT_PROXIMITY_INCREMENT, LC_DEFAULT_INCLINATION_THRESHOLD,
-                             LC_DEFAULT_DISTANCE_THRESHOLD, LC_DEFAULT_START_POINTS_COUNT);
+  lc_counter_t *lc = lc_init(LC_DEFAULT_PROXIMITY_THRESHOLD, LC_DEFAULT_INCLINATION_THRESHOLD,
+                             LC_DEFAULT_DISTANCE_THRESHOLD, LC_DEFAULT_START_POINTS_COUNT, 0);
 
   int increment_direction = 0;
   

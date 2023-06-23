@@ -14,6 +14,7 @@ extern "C" {
 #define LC_DEFAULT_INCLINATION_THRESHOLD 0.8
 #define LC_DEFAULT_DISTANCE_THRESHOLD 0.000001
 #define LC_DEFAULT_START_POINTS_COUNT 10
+#define LC_DEFAULT_SECTOR_RANGE 0.0001
 
 /**
  * @brief The struct containing the lap info
@@ -39,6 +40,12 @@ typedef struct _lc_counter_t {
   lc_point_t current_point;
   lc_point_t last_point;
 
+  int sector_count;
+  int sector_index;
+  lc_point_t *points;
+  lc_vector_t *sector_inclination_vector;
+  lc_vector_t *sector_line_vector;
+
   /** Last result of proximity evaluation **/
   int last_proximity_result;
   /** Last result of inclination evaluation **/
@@ -54,6 +61,7 @@ typedef struct _lc_counter_t {
   /** y = y_prev + delta_y * correction_factor */
   /** the same can be done with the timestamp */
   double correction_factor;
+  double correction_factor_sector;
 
   double proximity_threshold;
   double inclination_threshold;
@@ -70,7 +78,10 @@ typedef struct _lc_counter_t {
  * @return The created leap counter
  */
 lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, double distance_threshold,
-                      size_t start_points_count);
+                      size_t start_points_count, int sector_count);
+
+int lc_save(lc_counter_t* counter, char *path);
+int lc_load(lc_counter_t* counter, char *path);
 
 /**
  * @brief Adds a point to the leap counter and returns if there is a new leap
@@ -94,6 +105,15 @@ void lc_reset(lc_counter_t *counter);
  * @param counter The leap counter to deallocate
  */
 void lc_destroy(lc_counter_t *counter);
+
+
+/**
+ * @brief Set current sector
+ *
+ * @param counter The lap counter 
+ * @param point The point to set as end of sector
+ */
+void lc_add_sector(lc_counter_t *counter, lc_point_t *point);
 
 #ifdef __cplusplus
 }

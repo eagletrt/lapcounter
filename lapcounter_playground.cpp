@@ -50,6 +50,8 @@ int main(int argc, char *argv[]) {
   lc_point_t points[MAX_POINTS];
   lc_point_t geo_points[MAX_POINTS];
 
+  int sectors_index[] = {76, 137};
+
   int total_laps = 0;
   int laps[MAX_LAPS];
 
@@ -139,9 +141,10 @@ int main(int argc, char *argv[]) {
   int j = 0;
 
   int x_start = 0, x_end = 0, y_start = 0, y_end = 0;
+  int sector = 0;
 
-  lc_counter_t *lc = lc_init(LC_DEFAULT_PROXIMITY_INCREMENT, LC_DEFAULT_INCLINATION_THRESHOLD,
-                             LC_DEFAULT_DISTANCE_THRESHOLD, LC_DEFAULT_START_POINTS_COUNT);
+  lc_counter_t *lc = lc_init(LC_DEFAULT_PROXIMITY_THRESHOLD, LC_DEFAULT_INCLINATION_THRESHOLD,
+                             LC_DEFAULT_DISTANCE_THRESHOLD, LC_DEFAULT_START_POINTS_COUNT, sizeof(sectors_index)/sizeof(int)+1);
                              
   // lc_eval_point(lc, &geo_points[point_index]);
 
@@ -162,6 +165,15 @@ int main(int argc, char *argv[]) {
       lc_reset(lc);
     }
 
+    if(IsKeyPressed(KEY_L)) {   //save
+      lc_save(lc, "save.bin");
+    }
+    if(IsKeyPressed(KEY_K)) {
+      lc_load(lc, "save.bin");
+      printf("loaded %d sectors\n", lc->sector_count);
+      printf("%f\n", lc->points[0].x);
+    }
+
     if (IsKeyPressed(KEY_UP)) {
       speed = speed == 1 ? 2 : fmin(speed + 2, 50);
     } else if (IsKeyPressed(KEY_DOWN)) {
@@ -178,9 +190,16 @@ int main(int argc, char *argv[]) {
 
     if(increment_direction != 0){
       for(int i = 0; i < speed; i++) {
-        if (lc_eval_point(lc, &geo_points[point_index])) {
+#ifdef ADD_SECTORS
+        if(point_index == sectors_index[sector])
+          lc_add_sector(lc, &geo_points[point_index]);
+#endif
+        int tmp = lc_eval_point(lc, &geo_points[point_index]);
+        if (tmp == 0) {
           laps[lap_index++] = point_index;
         }
+        if(tmp >= 0)
+          sector = tmp;
         point_index = mod(point_index + increment_direction, total_points);
       }
     }
@@ -231,15 +250,24 @@ int main(int argc, char *argv[]) {
     DrawLine(XX(lc->current_point.x), YY(lc->current_point.y), XX(lc->current_point.x + lc->current_vector.x * 10),
              YY(lc->current_point.y + lc->current_vector.y * 10), VIOLET);
 
+    for(int i=0;i<sizeof(sectors_index)/sizeof(int);i++) {
+      double x = geo_points[sectors_index[i]].x;
+      double y = geo_points[sectors_index[i]].y;
+      DrawCircle(XX(x), YY(y), 10, RED);
+    }
+
     sprintf(buffer, "Lap time: %.3f\nBest: %.3f\nLast: %.3f", lap_time, best_lap_time, last_lap_time);
     DrawText(buffer, 10, 10, 20, BLACK);
 
+    sprintf(buffer, "Current sector: %d\n", sector);
+    DrawText(buffer, 10, 100, 20, BLACK);
+
     sprintf(buffer, "Lap: %d\nPoint: %d\nSpeed: %dx\nInclination: %d\nProximity %d\nOverlap: %d", lap_index + 1,
             point_index + 1, speed, lc->last_inclination_result, lc->last_proximity_result, lc->last_overlap_result);
-    DrawText(buffer, 10, height - 240, 20, BLACK);
+    DrawText(buffer, 10, height - 500, 20, BLACK);
 
     sprintf(buffer, "%f\n%f", lat, lng);
-    DrawText(buffer, 10, height - 60, 20, BLACK);
+    DrawText(buffer, 10, height - 300, 20, BLACK);
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
       SetClipboardText(buffer);

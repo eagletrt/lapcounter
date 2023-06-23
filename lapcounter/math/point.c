@@ -10,7 +10,7 @@ double lc_point_line_distance(const lc_point_t *p, const lc_point_t *l1, const l
   // dist = abs((x2-x1)*(y1-ys) - (x1-xs)*(y2-y1)) / sqrt((x2-x1)^2 + (y2-y1)^2)
   double num = fabs((l2->x - l1->x)*(l1->y - p->y ) - (l2->y - l1->y) * (l1->x - p->x ));
   double den = sqrt((l2->x - l1->x)*(l2->x - l1->x) + (l2->y - l1->y) * (l2->y - l1->y));
-  double distance = num / den;
+  return num / den;
 }
 
 
