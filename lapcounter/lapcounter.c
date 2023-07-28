@@ -319,6 +319,7 @@ void lc_add_sector(lc_counter_t *counter, lc_point_t *point) {
 void lc_set_start_position(lc_counter_t *counter, lc_point_t *point) {
   counter->start_points[0] = *point;
   counter->start_points[1] = *point;
+  counter->start_point_index = counter->start_points_count + 1;
 }
 
 void lc_set_start_inclination(lc_counter_t *counter, lc_vector_t *start_line) {
