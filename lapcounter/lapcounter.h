@@ -74,13 +74,19 @@ typedef struct _lc_counter_t {
 /**
  * @brief Creates a leap counter
  *
- * @param config The configurations for the leap counter.
+ * @param config The configurations for the lap counter.
  * @return The created leap counter
  */
 lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, double distance_threshold,
                       size_t start_points_count, int sector_count);
 
+/**
+ * @brief Saves sector positions and inclinations in binary format
+*/
 int lc_save(lc_counter_t* counter, char *path);
+/**
+ * @brief Loads the saved data
+*/
 int lc_load(lc_counter_t* counter, char *path);
 
 /**
@@ -106,7 +112,6 @@ void lc_reset(lc_counter_t *counter);
  */
 void lc_destroy(lc_counter_t *counter);
 
-
 /**
  * @brief Set current sector
  *
@@ -114,6 +119,42 @@ void lc_destroy(lc_counter_t *counter);
  * @param point The point to set as end of sector
  */
 void lc_add_sector(lc_counter_t *counter, lc_point_t *point);
+
+/**
+ * @brief Sets start line position without resetting the lap counter
+ * 
+ * @param counter The lap counter
+ * @param point The new start line position 
+*/
+void lc_set_start_position(lc_counter_t *counter, lc_point_t *point);
+
+/**
+ * @brief Sets start line direction (in travel direction)
+ * 
+ * @param counter The lap counter
+ * @param start_line The new inclination of the start line 
+*/
+void lc_set_start_inclination(lc_counter_t *counter, lc_vector_t *start_line);
+
+/**
+ * @brief Sets sector position
+ * 
+ * @param counter The lap counter
+ * @param index The sector index
+ * @param point The point to set as end of sector
+ * @return 0 if the point is set, -1 if sector was not found
+*/
+int lc_set_sector_position(lc_counter_t *counter, int index, lc_point_t *point);
+
+/**
+ * @brief Sets sector line direction (in travel direction)
+ * 
+ * @param counter The lap counter
+ * @param index The sector index
+ * @param sector_line The direction vector of the sector line
+ * @return 0 if the direction is set, -1 if sector was not found
+*/
+int lc_set_sector_inclination(lc_counter_t *counter, int index, lc_vector_t *sector_line);
 
 #ifdef __cplusplus
 }

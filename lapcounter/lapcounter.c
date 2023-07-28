@@ -122,14 +122,6 @@ int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
   return -1;
 }
 
-void lc_add_sector(lc_counter_t *counter, lc_point_t *point) {
-  if(counter->sector_index < counter->sector_count-1)
-  {
-    counter->points[counter->sector_index] = *point;
-    _calc_sector_line(counter, point);
-  }
-}
-
 void lc_reset(lc_counter_t *counter) {
   _reset_last_results(counter);
 
@@ -313,5 +305,38 @@ int lc_load(lc_counter_t* counter, char* path){
     fread(&counter->sector_line_vector[i].y, 8, 1, f);
   }
   fclose(f);
+  return 0;
+}
+
+void lc_add_sector(lc_counter_t *counter, lc_point_t *point) {
+  if(counter->sector_index < counter->sector_count-1)
+  {
+    counter->points[counter->sector_index] = *point;
+    _calc_sector_line(counter, point);
+  }
+}
+
+void lc_set_start_position(lc_counter_t *counter, lc_point_t *point) {
+  counter->start_points[0] = *point;
+  counter->start_points[1] = *point;
+}
+
+void lc_set_start_inclination(lc_counter_t *counter, lc_vector_t *start_line) {
+  counter->start_inclination_vector = *start_line;
+  lc_vector_set_from_perpendicular(&counter->start_line_vector, start_line);
+}
+
+int lc_set_sector_position(lc_counter_t *counter, int index, lc_point_t *point) {
+  if(index > counter->sector_count-1 || index < 0)
+    return -1;
+  counter->points[index] = *point;
+  return 0;
+}
+
+int lc_set_sector_inclination(lc_counter_t *counter, int index, lc_vector_t *sector_line) {
+  if(index > counter->sector_count-1 || index < 0)
+    return -1;
+  counter->sector_inclination_vector[index] = *sector_line;
+  lc_vector_set_from_perpendicular(&counter->sector_line_vector[index], sector_line);
   return 0;
 }
