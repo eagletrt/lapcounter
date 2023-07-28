@@ -69,7 +69,7 @@ int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
     under_threshold = 1;
   }
 
-  if(under_threshold == 0 && counter->laps_count == 0 && counter->start_point_index > 0)
+  // if(under_threshold == 0 && counter->laps_count == 0 && counter->start_point_index > 0)
 
   // Sets the last two points (last and current) and updates the related vector (current_vector)
   _update_current_vector(counter, point);
