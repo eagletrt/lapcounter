@@ -83,11 +83,11 @@ lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, 
 /**
  * @brief Saves sector positions and inclinations in binary format
 */
-int lc_save(lc_counter_t* counter, char *path);
+int lc_save(const lc_counter_t* counter, const char *path);
 /**
  * @brief Loads the saved data
 */
-int lc_load(lc_counter_t* counter, char *path);
+int lc_load(lc_counter_t* counter, const char *path);
 
 /**
  * @brief Adds a point to the leap counter and returns if there is a new leap

@@ -272,37 +272,44 @@ static void _calc_correction_factor(lc_counter_t* counter){
   counter->correction_factor = intersection_distance / travel_distance;
 }
 
-int lc_save(lc_counter_t* counter, char* path){
+int lc_save(const lc_counter_t* counter, const char* path) {
   FILE *f = fopen(path, "wb");
   if(f == NULL) return 1;
+  fwrite(&counter->start_points[0].x, sizeof(double), 1, f);
+  fwrite(&counter->start_points[0].y, sizeof(double), 1, f);
+  fwrite(&counter->start_points[1].x, sizeof(double), 1, f);
+  fwrite(&counter->start_points[1].y, sizeof(double), 1, f);
+  fwrite(&counter->start_point_index, sizeof(size_t), 1, f);
   fwrite(&counter->sector_count, 8, 1, f);
-  for(int i=0;i<counter->sector_count;i++)
-  {
-    fwrite(&counter->points[i].x, 8, 1, f);
-    fwrite(&counter->points[i].y, 8, 1, f);
-    fwrite(&counter->sector_inclination_vector[i].x, 8, 1, f);
-    fwrite(&counter->sector_inclination_vector[i].y, 8, 1, f);
-    fwrite(&counter->sector_line_vector[i].x, 8, 1, f);
-    fwrite(&counter->sector_line_vector[i].y, 8, 1, f);
+  for(int i = 0; i < counter->sector_count; i++) {
+    fwrite(&counter->points[i].x, sizeof(double), 1, f);
+    fwrite(&counter->points[i].y, sizeof(double), 1, f);
+    fwrite(&counter->sector_inclination_vector[i].x, sizeof(double), 1, f);
+    fwrite(&counter->sector_inclination_vector[i].y, sizeof(double), 1, f);
+    fwrite(&counter->sector_line_vector[i].x, sizeof(double), 1, f);
+    fwrite(&counter->sector_line_vector[i].y, sizeof(double), 1, f);
   }
   fclose(f);
   return 0;
 }
 
-int lc_load(lc_counter_t* counter, char* path){
+int lc_load(lc_counter_t* counter, const char* path){
   FILE *f = fopen(path, "r");
   if(f == NULL) return 1;
-  double tmp;
-  fread(&counter->sector_count, 8, 1, f);
+  fread(&counter->start_points[0].x, sizeof(double), 1, f);
+  fread(&counter->start_points[0].y, sizeof(double), 1, f);
+  fread(&counter->start_points[1].x, sizeof(double), 1, f);
+  fread(&counter->start_points[1].y, sizeof(double), 1, f);
+  fread(&counter->start_point_index, sizeof(size_t), 1, f);
+  fread(&counter->sector_count, sizeof(double), 1, f);
   _lc_init_sectors(counter, counter->sector_count);
-  for(int i=0;i<counter->sector_count;i++)
-  {
-    fread(&counter->points[i].x, 8, 1, f);
-    fread(&counter->points[i].y, 8, 1, f);
-    fread(&counter->sector_inclination_vector[i].x, 8, 1, f);
-    fread(&counter->sector_inclination_vector[i].y, 8, 1, f);
-    fread(&counter->sector_line_vector[i].x, 8, 1, f);
-    fread(&counter->sector_line_vector[i].y, 8, 1, f);
+  for(int i = 0; i < counter->sector_count; i++) {
+    fread(&counter->points[i].x, sizeof(double), 1, f);
+    fread(&counter->points[i].y, sizeof(double), 1, f);
+    fread(&counter->sector_inclination_vector[i].x, sizeof(double), 1, f);
+    fread(&counter->sector_inclination_vector[i].y, sizeof(double), 1, f);
+    fread(&counter->sector_line_vector[i].x, sizeof(double), 1, f);
+    fread(&counter->sector_line_vector[i].y, sizeof(double), 1, f);
   }
   fclose(f);
   return 0;
