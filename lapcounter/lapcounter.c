@@ -280,7 +280,11 @@ int lc_save(const lc_counter_t* counter, const char* path) {
   fwrite(&counter->start_points[1].x, sizeof(double), 1, f);
   fwrite(&counter->start_points[1].y, sizeof(double), 1, f);
   fwrite(&counter->start_point_index, sizeof(size_t), 1, f);
-  fwrite(&counter->sector_count, 8, 1, f);
+  fwrite(&counter->start_inclination_vector.x, sizeof(double), 1, f);
+  fwrite(&counter->start_inclination_vector.y, sizeof(double), 1, f);
+  fwrite(&counter->start_line_vector.x, sizeof(double), 1, f);
+  fwrite(&counter->start_line_vector.y, sizeof(double), 1, f);
+  fwrite(&counter->sector_count, sizeof(double), 1, f);
   for(int i = 0; i < counter->sector_count; i++) {
     fwrite(&counter->points[i].x, sizeof(double), 1, f);
     fwrite(&counter->points[i].y, sizeof(double), 1, f);
@@ -301,6 +305,10 @@ int lc_load(lc_counter_t* counter, const char* path){
   fread(&counter->start_points[1].x, sizeof(double), 1, f);
   fread(&counter->start_points[1].y, sizeof(double), 1, f);
   fread(&counter->start_point_index, sizeof(size_t), 1, f);
+  fread(&counter->start_inclination_vector.x, sizeof(double), 1, f);
+  fread(&counter->start_inclination_vector.y, sizeof(double), 1, f);
+  fread(&counter->start_line_vector.x, sizeof(double), 1, f);
+  fread(&counter->start_line_vector.y, sizeof(double), 1, f);
   fread(&counter->sector_count, sizeof(double), 1, f);
   _lc_init_sectors(counter, counter->sector_count);
   for(int i = 0; i < counter->sector_count; i++) {
