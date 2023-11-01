@@ -44,7 +44,7 @@ lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, 
   counter->laps_count = 0;
   counter->sector_index = 0;
 
-  counter->sector_count = (sector_count <0 ) ? 0 : sector_count;
+  counter->sector_count = (sector_count < 0 ) ? 0 : sector_count;
   counter->proximity_threshold = proximity_threshold;
   counter->inclination_threshold = inclination_threshold;
   counter->distance_threshold = distance_threshold;
@@ -80,14 +80,14 @@ int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
     // Reset last result
     _reset_last_results(counter);
 
-    if(counter->sector_count > 0 && counter->sector_index < counter->sector_count) {
-      int new_sector = _check_proximity(counter, &counter->sector_positions[counter->sector_index]) &&
-            _check_inclination(counter, &counter->sector_inclination_vector[counter->sector_index]) &&
-            _check_overlap(counter, &counter->sector_line_vector[counter->sector_index], &counter->sector_positions[counter->sector_index]);
-      counter->sector_index += new_sector;
-      if(new_sector) {
+    for(int i = 0; i < counter->sector_count; i++) {
+      int new_sector = _check_proximity(counter, &counter->sector_positions[i]) &&
+            _check_inclination(counter, &counter->sector_inclination_vector[i]) &&
+            _check_overlap(counter, &counter->sector_line_vector[i], &counter->sector_positions[i]);
+      if (new_sector) {
+        counter->sector_index = i + 1;
         _calc_correction_factor_sector(counter);
-        return counter->sector_index;
+        return i + 1;
       }
     }
 
@@ -189,13 +189,7 @@ static int _check_proximity_start(lc_counter_t *counter){
 }
 
 static int _check_proximity(lc_counter_t *counter, lc_point_t *point) {
-  lc_vector_t travel = {counter->current_point.x - counter->last_point.x,
-                        counter->current_point.y - counter->last_point.y};
-  
-  if(travel.x == 0 && travel.y == 0)
-    return 0;
-
-  double distance = lc_point_line_distance(point, &counter->last_point, &counter->current_point);
+  double distance = lc_point_distance(point, &counter->current_point);
 
   return distance < counter->proximity_threshold;
 }
@@ -210,9 +204,7 @@ static int _check_inclination(lc_counter_t *counter, lc_vector_t *inclination_ve
   double start_angle = lc_vector_angle(inclination_vector);
 
   double angle_difference = fabs(current_angle - start_angle);
-  if (angle_difference < 0) {
-    angle_difference += 2 * M_PI;
-  }
+  angle_difference = angle_difference > M_PI ? 2 * M_PI - angle_difference : angle_difference;
 
   return angle_difference <= counter->inclination_threshold;
 }
