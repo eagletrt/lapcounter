@@ -42,7 +42,7 @@ typedef struct _lc_counter_t {
 
   int sector_count;
   int sector_index;
-  lc_point_t *points;
+  lc_point_t *sector_positions;
   lc_vector_t *sector_inclination_vector;
   lc_vector_t *sector_line_vector;
 
@@ -118,7 +118,14 @@ void lc_destroy(lc_counter_t *counter);
  * @param counter The lap counter 
  * @param point The point to set as end of sector
  */
-void lc_add_sector(lc_counter_t *counter, lc_point_t *point);
+void lc_add_sector(lc_counter_t *counter);
+
+/** 
+ * @brief Clears all sectors
+ * 
+ * @param counter The lap counter
+*/
+void lc_clear_sectors(lc_counter_t *counter);
 
 /**
  * @brief Sets start line position without resetting the lap counter

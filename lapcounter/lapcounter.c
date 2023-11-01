@@ -14,6 +14,9 @@ static void _calc_sector_line(lc_counter_t *counter, lc_point_t *current_point);
 // Resets to False (0) the results from the last evaluation
 static void _reset_last_results(lc_counter_t *counter);
 
+void _lc_init_sectors(lc_counter_t *counter, int sector_count);
+void _lc_deinit_sectors(lc_counter_t *counter);
+
 // Checks if the last point is very near to the first point
 static int _check_proximity(lc_counter_t *counter, lc_point_t *point);
 static int _check_proximity_start(lc_counter_t *counter);
@@ -31,16 +34,6 @@ static void _calc_correction_factor_sector(lc_counter_t* counter);
 static inline double dist(double x1, double y1, double x2, double y2)
 { return sqrt(pow(x1-x2, 2) + pow(y1-y2, 2));}
 
-
-void _lc_init_sectors(lc_counter_t *counter, int sector_count){
-  counter->points = (lc_point_t *)malloc(sizeof(lc_point_t)*sector_count);
-  counter->sector_inclination_vector = (lc_vector_t *)malloc(sizeof(lc_vector_t)*sector_count);
-  counter->sector_line_vector = (lc_vector_t *)malloc(sizeof(lc_vector_t)*sector_count);
-  memset(counter->points, 0, sizeof(lc_point_t) * sector_count);
-  memset(counter->sector_inclination_vector, 0, sizeof(lc_vector_t) * sector_count);
-  memset(counter->sector_line_vector, 0, sizeof(lc_vector_t) * sector_count);
-}
-
 lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, double distance_threshold,
                       size_t start_points_count, int sector_count) {
   lc_counter_t *counter = (lc_counter_t *)malloc(sizeof(lc_counter_t));
@@ -51,7 +44,7 @@ lc_counter_t *lc_init(double proximity_threshold, double inclination_threshold, 
   counter->laps_count = 0;
   counter->sector_index = 0;
 
-  counter->sector_count = (sector_count<=0)?1:sector_count;
+  counter->sector_count = (sector_count <0 ) ? 0 : sector_count;
   counter->proximity_threshold = proximity_threshold;
   counter->inclination_threshold = inclination_threshold;
   counter->distance_threshold = distance_threshold;
@@ -81,27 +74,20 @@ int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
       counter->start_points[1] = *point;
       // If the points for the start line are just finished, calculate the start line and the start vector
       _calc_startline(counter);
-
-      //the last sector point is the starting point
-      counter->points[counter->sector_count-1] = counter->start_points[0];
-      counter->sector_inclination_vector[counter->sector_count-1] = counter->start_inclination_vector;
-      counter->sector_line_vector[counter->sector_count-1] = counter->start_line_vector;
     }
     counter->start_point_index ++;
   } else {
     // Reset last result
     _reset_last_results(counter);
 
-    if(counter->sector_count > 1 && counter->sector_index != counter->sector_count-1)
-    {
-      int new_sector = _check_proximity(counter, &counter->points[counter->sector_index]) &&
+    if(counter->sector_count > 0 && counter->sector_index < counter->sector_count) {
+      int new_sector = _check_proximity(counter, &counter->sector_positions[counter->sector_index]) &&
             _check_inclination(counter, &counter->sector_inclination_vector[counter->sector_index]) &&
-            _check_overlap(counter, &counter->sector_line_vector[counter->sector_index], &counter->points[counter->sector_index]);
+            _check_overlap(counter, &counter->sector_line_vector[counter->sector_index], &counter->sector_positions[counter->sector_index]);
       counter->sector_index += new_sector;
-      if(new_sector)
-      {
+      if(new_sector) {
         _calc_correction_factor_sector(counter);
-        return counter->sector_index;
+        return counter->sector_index - 1;
       }
     }
 
@@ -138,12 +124,13 @@ void lc_reset(lc_counter_t *counter) {
   counter->sector_index = 0;
 
   memset(counter->start_points, 0, sizeof(lc_point_t) * 2);
-  memset(counter->points, 0, sizeof(lc_point_t) * counter->sector_count);
+  memset(counter->sector_positions, 0, sizeof(lc_point_t) * counter->sector_count);
   memset(counter->sector_inclination_vector, 0, sizeof(lc_vector_t) * counter->sector_count);
   memset(counter->sector_line_vector, 0, sizeof(lc_vector_t) * counter->sector_count);
 }
 
 void lc_destroy(lc_counter_t *counter) {
+  _lc_deinit_sectors(counter);
   free(counter);
 }
 
@@ -253,8 +240,8 @@ static int _check_overlap(lc_counter_t *counter, lc_vector_t *line_vector, lc_po
 static void _calc_correction_factor_sector(lc_counter_t* counter) {
   int ind = counter->sector_index-1;
   if(ind < 0) ind = counter->sector_count-1;
-  double min_distance = lc_point_line_distance(&counter->points[ind], &counter->last_point, &counter->current_point);
-  double last_distance = lc_point_distance(&counter->points[ind], &counter->last_point);
+  double min_distance = lc_point_line_distance(&counter->sector_positions[ind], &counter->last_point, &counter->current_point);
+  double last_distance = lc_point_distance(&counter->sector_positions[ind], &counter->last_point);
   double travel_distance = lc_point_distance(&counter->last_point, &counter->current_point);
 
   double intersection_distance = sqrt(pow(last_distance, 2) - pow(min_distance, 2));
@@ -272,6 +259,30 @@ static void _calc_correction_factor(lc_counter_t* counter){
   counter->correction_factor = intersection_distance / travel_distance;
 }
 
+void _lc_init_sectors(lc_counter_t *counter, int sector_count) {
+  if(sector_count == 0) return;
+  counter->sector_positions = (lc_point_t *)malloc(sizeof(lc_point_t)*sector_count);
+  counter->sector_inclination_vector = (lc_vector_t *)malloc(sizeof(lc_vector_t)*sector_count);
+  counter->sector_line_vector = (lc_vector_t *)malloc(sizeof(lc_vector_t)*sector_count);
+  memset(counter->sector_positions, 0, sizeof(lc_point_t) * sector_count);
+  memset(counter->sector_inclination_vector, 0, sizeof(lc_vector_t) * sector_count);
+  memset(counter->sector_line_vector, 0, sizeof(lc_vector_t) * sector_count);
+  counter->sector_index = 0;
+  counter->sector_count = sector_count;
+}
+
+void _lc_deinit_sectors(lc_counter_t *counter) {
+  if(counter->sector_count == 0) return;
+  free(counter->sector_positions);
+  free(counter->sector_inclination_vector);
+  free(counter->sector_line_vector);
+  counter->sector_positions = NULL;
+  counter->sector_inclination_vector = NULL;
+  counter->sector_line_vector = NULL;
+  counter->sector_index = 0;
+  counter->sector_count = 0;
+}
+
 int lc_save(const lc_counter_t* counter, const char* path) {
   FILE *f = fopen(path, "wb");
   if(f == NULL) return 1;
@@ -286,8 +297,8 @@ int lc_save(const lc_counter_t* counter, const char* path) {
   fwrite(&counter->start_line_vector.y, sizeof(double), 1, f);
   fwrite(&counter->sector_count, sizeof(int), 1, f);
   for(int i = 0; i < counter->sector_count; i++) {
-    fwrite(&counter->points[i].x, sizeof(double), 1, f);
-    fwrite(&counter->points[i].y, sizeof(double), 1, f);
+    fwrite(&counter->sector_positions[i].x, sizeof(double), 1, f);
+    fwrite(&counter->sector_positions[i].y, sizeof(double), 1, f);
     fwrite(&counter->sector_inclination_vector[i].x, sizeof(double), 1, f);
     fwrite(&counter->sector_inclination_vector[i].y, sizeof(double), 1, f);
     fwrite(&counter->sector_line_vector[i].x, sizeof(double), 1, f);
@@ -312,8 +323,8 @@ int lc_load(lc_counter_t* counter, const char* path){
   fread(&counter->sector_count, sizeof(int), 1, f);
   _lc_init_sectors(counter, counter->sector_count);
   for(int i = 0; i < counter->sector_count; i++) {
-    fread(&counter->points[i].x, sizeof(double), 1, f);
-    fread(&counter->points[i].y, sizeof(double), 1, f);
+    fread(&counter->sector_positions[i].x, sizeof(double), 1, f);
+    fread(&counter->sector_positions[i].y, sizeof(double), 1, f);
     fread(&counter->sector_inclination_vector[i].x, sizeof(double), 1, f);
     fread(&counter->sector_inclination_vector[i].y, sizeof(double), 1, f);
     fread(&counter->sector_line_vector[i].x, sizeof(double), 1, f);
@@ -323,12 +334,30 @@ int lc_load(lc_counter_t* counter, const char* path){
   return 0;
 }
 
-void lc_add_sector(lc_counter_t *counter, lc_point_t *point) {
-  if(counter->sector_index < counter->sector_count-1)
-  {
-    counter->points[counter->sector_index] = *point;
-    _calc_sector_line(counter, point);
+void lc_add_sector(lc_counter_t *counter) {
+  lc_point_t *new_positions = (lc_point_t *)malloc(sizeof(lc_point_t)*(counter->sector_count+1));
+  lc_vector_t *new_sector_inclination_vector = (lc_vector_t *)malloc(sizeof(lc_vector_t)*(counter->sector_count+1));
+  lc_vector_t *new_sector_line_vector = (lc_vector_t *)malloc(sizeof(lc_vector_t)*(counter->sector_count+1));
+  if(counter->sector_count == 0) {
+    counter->sector_positions = new_positions;
+    counter->sector_inclination_vector = new_sector_inclination_vector;
+    counter->sector_line_vector = new_sector_line_vector;
+  } else {
+    memcpy(new_positions, counter->sector_positions, sizeof(lc_point_t)*counter->sector_count);
+    memcpy(new_sector_inclination_vector, counter->sector_inclination_vector, sizeof(lc_vector_t)*counter->sector_count);
+    memcpy(new_sector_line_vector, counter->sector_line_vector, sizeof(lc_vector_t)*counter->sector_count);
+    free(counter->sector_positions);
+    free(counter->sector_inclination_vector);
+    free(counter->sector_line_vector);
+    counter->sector_positions = new_positions;
+    counter->sector_inclination_vector = new_sector_inclination_vector;
+    counter->sector_line_vector = new_sector_line_vector;
   }
+  counter->sector_count++;
+}
+
+void lc_clear_sectors(lc_counter_t *counter) {
+  _lc_deinit_sectors(counter);
 }
 
 void lc_set_start_position(lc_counter_t *counter, lc_point_t *point) {
@@ -345,7 +374,7 @@ void lc_set_start_inclination(lc_counter_t *counter, lc_vector_t *start_line) {
 int lc_set_sector_position(lc_counter_t *counter, int index, lc_point_t *point) {
   if(index > counter->sector_count-1 || index < 0)
     return -1;
-  counter->points[index] = *point;
+  counter->sector_positions[index] = *point;
   return 0;
 }
 
