@@ -87,7 +87,7 @@ int lc_eval_point(lc_counter_t *counter, lc_point_t *point) {
       counter->sector_index += new_sector;
       if(new_sector) {
         _calc_correction_factor_sector(counter);
-        return counter->sector_index - 1;
+        return counter->sector_index;
       }
     }
 
